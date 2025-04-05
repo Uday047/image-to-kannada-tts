@@ -6,5 +6,20 @@ numpy
 opencv-python
 gTTS
 symspellpy
+streamlit
+pillow
+numpy
+opencv-python
+easyocr
+symspellpy
+gTTS
+python-bidi
+language_tool_python
+openai
+indic-nlp-library
+indic-transliteration
+requests
+regex
+textblob
 
 
