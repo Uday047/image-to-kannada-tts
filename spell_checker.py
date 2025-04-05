@@ -1,9 +1,16 @@
 # spell_checker.py
 from symspellpy import SymSpell, Verbosity
+import os
 
 def load_symspell():
     sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
-    dictionary_path = "kannada_wordList_with_freq.txt"  # UTF-8 Kannada wordlist with frequency
+    
+    # Use absolute path relative to this script's directory
+    base_path = os.path.dirname(__file__)
+    dictionary_path = os.path.join(base_path, "kannada_wordList_with_freq.txt")
+
+    if not os.path.exists(dictionary_path):
+        raise FileNotFoundError(f"Dictionary file not found at: {dictionary_path}")
 
     with open(dictionary_path, 'r', encoding='utf-8') as f:
         sym_spell.load_dictionary_stream(f, term_index=0, count_index=1, separator=' ')

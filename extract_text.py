@@ -1,6 +1,6 @@
 # extract_text.py
 import easyocr
-from spell_checker import correct_spelling, load_symspell  # Use correct imports
+from spell_checker import correct_spelling, load_symspell
 
 # Load SymSpell once
 sym_spell = load_symspell()
@@ -13,12 +13,12 @@ def extract_text(image_path):
     extracted_text = ' '.join(filtered_result)
 
     print('\nRaw Extracted Kannada Text:', extracted_text)
-    
-    corrected_text = correct_spelling(extracted_text, sym_spell)  # Use sym_spell
-    
+
+    corrected_text = correct_spelling(extracted_text, sym_spell)
+
     print('\nCorrected Kannada Text:', corrected_text)
-    
+
     with open('output.txt', 'w', encoding='utf-8') as f:
         f.write(corrected_text)
-    
+
     return corrected_text
