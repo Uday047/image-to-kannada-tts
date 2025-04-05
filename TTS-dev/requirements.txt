@@ -1,0 +1,74 @@
+Yes, both text extraction (image processing) and text-to-speech (TTS) conversion are fully AI-based because they involve machine learning models trained on large datasets to perform their tasks intelligently.
+
+1️⃣ Text Extraction (Image Processing) - AI-Based ✅
+Library Used: EasyOCR
+
+How It Works:
+
+Uses deep learning models (e.g., CRNN - Convolutional Recurrent Neural Networks).
+
+Recognizes text from images without rule-based pattern matching.
+
+Supports Kannada and many other languages.
+
+2️⃣ Text-to-Speech (TTS) Conversion - AI-Based ✅
+Library Used: gTTS (Google Text-to-Speech)
+
+How It Works:
+
+Uses neural network-based AI models to synthesize speech.
+
+Converts text into natural-sounding Kannada speech.
+
+Unlike simple rule-based TTS, it learns pronunciation from vast speech datasets.
+
+Thus, both text extraction and TTS conversion in your project are fully AI-based ✅.
+
+
+Here are the AI models used in text extraction (OCR) and text-to-speech (TTS) conversion in your project:
+
+1️⃣ Text Extraction (OCR) - AI-Based ✅
+Library Used: EasyOCR
+
+AI Models Used:
+
+Detection Model: CRAFT (Character Region Awareness for Text Detection)
+
+Recognition Model: CRNN (Convolutional Recurrent Neural Network)
+
+How It Works:
+
+CRAFT detects text regions in the image.
+
+CRNN recognizes characters from those regions using deep learning.
+
+2️⃣ Text-to-Speech (TTS) - AI-Based ✅
+Library Used: gTTS (Google Text-to-Speech)
+
+AI Models Used:
+
+Tacotron 2 (Text-to-Mel Spectrogram Conversion)
+
+WaveNet (Neural Vocoder for Speech Synthesis)
+
+How It Works:
+
+Tacotron 2 converts input text into a mel spectrogram (speech representation).
+
+WaveNet generates natural-sounding speech from the spectrogram.
+
+Both components use deep learning models trained on large datasets, making them fully AI-based ✅.
+
+
+
+
+
+ Indic Transliteration (indic-transliteration) is not AI-based ❌ because:
+
+It relies on predefined mappings between different Indic scripts.
+
+It does not use deep learning or AI models to learn patterns.
+
+It follows rule-based transliteration, meaning it applies fixed conversion rules instead of learning from data.
+
+Thus, it's not an AI-based tool but rather a rule-based system ✅.
