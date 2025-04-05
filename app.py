@@ -48,11 +48,6 @@ def main():
         unsafe_allow_html=True
     )
 
-    # Sidebar for language selection
-    st.sidebar.title("🌐 Language Settings")
-    lang_options = ["Kannada", "English", "Hindi", "Tamil", "Telugu"]
-    selected_lang = st.sidebar.selectbox("Choose Language", lang_options)
-
     # Upload or capture image section
     uploaded_file = st.file_uploader("📷 Upload an Image", type=["png", "jpg", "jpeg"])
     picture = st.camera_input("Take a picture")
@@ -81,18 +76,10 @@ def main():
             st.subheader("✏️ ಹಿಡಿದ ಪಠ್ಯವನ್ನು ಸಂಪಾದಿಸಿ")
             edited_text = st.text_area("ಈ ಕೆಳಗಿನ ಪಠ್ಯವನ್ನು ಸಂಪಾದಿಸಿ:", extracted_text)
 
-            # Translation (dummy)
-            if selected_lang != "Kannada":
-                st.subheader("🔄 ಅನುವಾದಿತ ಪಠ್ಯ")
-                translated_text = f"[Translated to {selected_lang}] {edited_text}"
-                st.write(translated_text)
-            else:
-                translated_text = edited_text
-
             # TTS
             with st.spinner("🎶 ಆಡಿಯೋ ತಯಾರಿಸಲಾಗುತ್ತಿದೆ..."):
                 audio_file = "output.mp3"
-                text_to_speech(translated_text, audio_file)
+                text_to_speech(edited_text, audio_file)
                 st.success("🔊 ಆಡಿಯೋ ಸಿದ್ಧವಾಗಿದೆ!")
                 st.audio(audio_file, format="audio/mp3", start_time=0)
 
