@@ -1,7 +1,7 @@
 streamlit==1.44.1
-torch>=2.0.0
-torchvision>=0.15.0
-torchaudio>=2.0.0
+torch==2.4.1
+torchaudio==2.4.1
+torchvision==0.19.1
 transformers
 Pillow>=11.1.0
 numpy>=2.2.4

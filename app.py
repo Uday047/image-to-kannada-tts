@@ -54,7 +54,7 @@ def main():
     image_source = uploaded_file if uploaded_file else picture
 
     if image_source is not None:
-        st.image(image_source, caption="Uploaded/Captured Image", use_column_width=True)
+        st.image(image_source, caption="Uploaded/Captured Image", use_container_width=True)
 
         # Convert and enhance image
         image = Image.open(image_source)
