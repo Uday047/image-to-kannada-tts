@@ -4,7 +4,7 @@ import os
 
 def load_symspell():
     sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
-    
+
     # Use absolute path relative to this script's directory
     base_path = os.path.dirname(__file__)
     dictionary_path = os.path.join(base_path, "kannada_wordList_with_freq.txt")
@@ -12,8 +12,8 @@ def load_symspell():
     if not os.path.exists(dictionary_path):
         raise FileNotFoundError(f"Dictionary file not found at: {dictionary_path}")
 
-    with open(dictionary_path, 'r', encoding='utf-8') as f:
-        sym_spell.load_dictionary_stream(f, term_index=0, count_index=1, separator=' ')
+    # Use load_dictionary instead of load_dictionary_stream
+    sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1, encoding='utf-8')
 
     return sym_spell
 
