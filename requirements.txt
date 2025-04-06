@@ -9,3 +9,4 @@ opencv-python-headless==4.11.0.86
 gTTS
 symspellpy
 easyocr
+nest_asyncio
