@@ -8,10 +8,6 @@ from extract_text import extract_text
 from text_to_speech import text_to_speech
 import os
 
-# 🔧 Fix for "This event loop is already running" error
-import nest_asyncio
-nest_asyncio.apply()
-
 def main():
     st.set_page_config(
         page_title="Kannada TTS App", 
@@ -65,16 +61,19 @@ def main():
 
             # Convert and enhance image
             image = Image.open(image_source)
+            # Ensure image is in RGB format to prevent errors with RGBA/P mode images in OpenCV
+            if image.mode != 'RGB':
+                image = image.convert('RGB')
             image_np = np.array(image)
 
             st.sidebar.title("🖼 Image Enhancement")
             brightness = st.sidebar.slider("Adjust Brightness", 0.5, 2.0, 1.0)
             contrast = st.sidebar.slider("Adjust Contrast", 0.5, 2.0, 1.0)
-            image_np = cv2.convertScaleAbs(image_np, alpha=contrast, beta=(brightness - 1) * 100)
+            enhanced_image_np = cv2.convertScaleAbs(image_np, alpha=contrast, beta=(brightness - 1) * 100)
 
             # OCR
             with st.spinner("🔄 Processing image..."):
-                extracted_text = extract_text(image_np)
+                extracted_text = extract_text(enhanced_image_np)
                 st.success("✅ ಪಠ್ಯ ಉಗಮಿಸಲು ಮುಗಿದಿದೆ!")
                 st.write("**ಹಿಡಿದ ಪಠ್ಯ:**", extracted_text)
 
@@ -82,27 +81,27 @@ def main():
                 st.subheader("✏️ ಹಿಡಿದ ಪಠ್ಯವನ್ನು ಸಂಪಾದಿಸಿ")
                 edited_text = st.text_area("ಈ ಕೆಳಗಿನ ಪಠ್ಯವನ್ನು ಸಂಪಾದಿಸಿ:", extracted_text)
 
-                # TTS
-                with st.spinner("🎶 ಆಡಿಯೋ ತಯಾರಿಸಲಾಗುತ್ತಿದೆ..."):
-                    audio_file = f"output_{int(time.time())}.mp3"  # Unique filename
-                    text_to_speech(edited_text, audio_file)
-                    st.success("🔊 ಆಡಿಯೋ ಸಿದ್ಧವಾಗಿದೆ!")
-                    st.audio(audio_file, format="audio/mp3", start_time=0)
+                if edited_text:
+                    st.subheader("🗣️ Text-to-Speech")
+                    if st.button("🔊 Generate Audio"):
+                        with st.spinner("🎶 ಆಡಿಯೋ ತಯಾರಿಸಲಾಗುತ್ತಿದೆ..."):
+                            audio_bytes = text_to_speech(text=edited_text, lang='kn')
+                            st.success("🔊 ಆಡಿಯೋ ಸಿದ್ಧವಾಗಿದೆ!")
+                            st.audio(audio_bytes, format="audio/mp3", start_time=0)
 
-                    st.download_button(
-                        label="📥 ಆಡಿಯೋ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
-                        data=open(audio_file, "rb").read(),
-                        file_name="kannada_speech.mp3",
-                        mime="audio/mpeg"
-                    )
-
-                    # Cleanup
-                    if os.path.exists(audio_file):
-                        os.remove(audio_file)
+                            st.download_button(
+                                label="📥 ಆಡಿಯೋ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+                                data=audio_bytes,
+                                file_name="kannada_speech.mp3",
+                                mime="audio/mpeg"
+                            )
         except Exception as e:
             st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
+    # This is a workaround for a Streamlit issue where it might re-run the script
+    # unnecessarily when new files are created. This disables the file watcher.
     if "server.fileWatcherType" not in st._config.get_options_for_section("server"):
         st._config.set_option("server.fileWatcherType", "none")
     main()
+    

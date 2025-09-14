@@ -1,18 +1,25 @@
 from gtts import gTTS
-import time
+from io import BytesIO
 
-def text_to_speech(text, output_file='kannada_speech.mp3', retries=3):
+def text_to_speech(text: str, lang: str = 'kn', filename: str = None) -> bytes:
+    """
+    Convert text into speech using the gTTS API.
+    Returns the audio bytes. If a filename is provided, it also saves the audio.
+    """
     if not text.strip():
-        raise ValueError("Text is empty — nothing to convert to speech.")
-    
-    for attempt in range(retries):
-        try:
-            tts = gTTS(text, lang='kn')
-            tts.save(output_file)
-            return output_file  # Return filename for Streamlit to use
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {repr(e)}")
-            if attempt < retries - 1:
-                time.sleep(2)
-            else:
-                raise Exception("TTS failed after all retries")
+        raise ValueError("❌ No text provided for TTS")
+
+    try:
+        tts = gTTS(text=text, lang=lang, slow=False)
+        fp = BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        audio_bytes = fp.read()
+    except Exception as e:
+        raise ConnectionError(f"❌ Failed to generate audio with gTTS: {e}")
+
+    if filename:
+        with open(filename, 'wb') as f:
+            f.write(audio_bytes)
+
+    return audio_bytes
