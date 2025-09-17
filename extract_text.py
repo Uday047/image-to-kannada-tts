@@ -77,11 +77,17 @@ def extract_text(image_source: Union[str, np.ndarray, Image.Image], lang: str = 
     img_gray = img.convert('L')
     img_np = np.array(img_gray)
 
-    # 2. Binarize the image using adaptive thresholding. This is more robust
+    # 2. Denoise the image. This is particularly useful for camera-captured images
+    #    which may have digital noise. A median blur is effective at removing
+    #    salt-and-pepper noise while preserving edges, which is crucial for OCR.
+    #    A kernel size of 3 is a safe choice.
+    img_denoised = cv2.medianBlur(img_np, 3)
+
+    # 3. Binarize the image using adaptive thresholding. This is more robust
     #    to varying lighting conditions than a fixed global threshold, which is
     #    especially important for camera-captured images.
     img_binary = cv2.adaptiveThreshold(
-        img_np, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+        img_denoised, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
     )
 
     # --- Tesseract Configuration for better accuracy ---
