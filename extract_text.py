@@ -2,58 +2,38 @@ import pytesseract
 from PIL import Image
 import cv2
 import numpy as np
-import os
-
 
 def preprocess_image(image_path):
-    """
-    Preprocesses images (especially from camera) to improve OCR accuracy.
-    - Grayscale
-    - Noise removal
-    - Thresholding
-    - Deskew (if rotated)
-    """
+    """Preprocess camera images to improve OCR accuracy."""
     img = cv2.imread(image_path)
 
     if img is None:
-        raise ValueError("❌ Could not read image for preprocessing")
+        raise ValueError("❌ Could not read image")
 
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Denoise
+    # Resize if too large
+    h, w = gray.shape
+    if max(h, w) > 1500:
+        scale = 1500 / max(h, w)
+        gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+
+    # Denoise & sharpen
     gray = cv2.medianBlur(gray, 3)
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # Threshold (Binarization)
-    _, thresh = cv2.threshold(
-        gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    # Adaptive threshold (better for uneven lighting)
+    thresh = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY, 31, 10
     )
 
-    # Deskew
-    coords = np.column_stack(np.where(thresh > 0))
-    angle = cv2.minAreaRect(coords)[-1]
-    if angle < -45:
-        angle = -(90 + angle)
-    else:
-        angle = -angle
-
-    (h, w) = thresh.shape
-    M = cv2.getRotationMatrix2D((w // 2, h // 2), angle, 1.0)
-    deskewed = cv2.warpAffine(
-        thresh, M, (w, h),
-        flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
-    )
-
-    return deskewed
-
+    return thresh
 
 def extract_text(image_path):
-    """
-    Extract Kannada text from image using Tesseract OCR.
-    Falls back to raw OCR if preprocessing fails.
-    """
+    """Extract Kannada text from image using Tesseract OCR."""
     try:
-        # Try with preprocessing (better for camera images)
         processed = preprocess_image(image_path)
         text = pytesseract.image_to_string(processed, lang="kan")
     except Exception as e:
