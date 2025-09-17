@@ -3,6 +3,7 @@ from PIL import Image
 import os
 import shutil
 import sys
+import cv2
 import numpy as np
 from typing import Union
 
@@ -71,16 +72,17 @@ def extract_text(image_source: Union[str, np.ndarray, Image.Image], lang: str = 
     else:
         raise TypeError(f"Unsupported image source type: {type(image_source)}")
 
-    # --- Image Pre-processing for better OCR ---
-    # 1. Convert to grayscale, which is a standard practice for OCR.
-    img = img.convert('L')
+    # --- Robust Image Pre-processing for better OCR ---
+    # 1. Convert to grayscale PIL image, then to numpy array for OpenCV processing.
+    img_gray = img.convert('L')
+    img_np = np.array(img_gray)
 
-    # 2. Binarize the image using a threshold. This creates a stark black and
-    #    white image, which can significantly help Tesseract distinguish text
-    #    from the background. This is crucial for detecting small characters
-    #    like commas and periods. The threshold value (e.g., 180) might need
-    #    tuning for different lighting conditions.
-    img = img.point(lambda x: 0 if x < 180 else 255, '1')
+    # 2. Binarize the image using adaptive thresholding. This is more robust
+    #    to varying lighting conditions than a fixed global threshold, which is
+    #    especially important for camera-captured images.
+    img_binary = cv2.adaptiveThreshold(
+        img_np, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+    )
 
     # --- Tesseract Configuration for better accuracy ---
     # --psm 4: Assume a single column of text of variable sizes. This is often
@@ -91,7 +93,7 @@ def extract_text(image_source: Union[str, np.ndarray, Image.Image], lang: str = 
         custom_config += f' --user-words "{TESSERACT_WORDLIST}"'
 
     # OCR
-    text = pytesseract.image_to_string(img, lang=lang, config=custom_config)
+    text = pytesseract.image_to_string(img_binary, lang=lang, config=custom_config)
 
     text = text.strip()
     if not text:
