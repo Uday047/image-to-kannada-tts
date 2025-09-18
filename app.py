@@ -51,8 +51,8 @@ def main():
                 color: #FFFF00; /* Bright yellow for high contrast */
                 text-align: center;
             }
-            /* Make the camera input button huge and unmissable */
-            div[data-testid="stCameraInput"] button {
+            /* Style for the main 'Open Camera' button */
+            div[data-testid="stButton"] > button {
                 background-color: #FFFF00;
                 color: black;
                 font-size: 24px;
@@ -65,6 +65,27 @@ def main():
                 width: 90%;
                 height: 120px;
             }
+            /* Style for the camera view to make it feel more full-screen */
+            div[data-testid="stCameraInput"] {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            div[data-testid="stCameraInput"] video {
+                width: 100%;
+                border-radius: 15px;
+            }
+            div[data-testid="stCameraInput"] button {
+                /* Make the capture button huge and circular */
+                background-color: #FF4B4B; /* Red color for capture */
+                color: white;
+                font-size: 20px;
+                font-weight: bold;
+                border-radius: 50%; /* Make it circular */
+                width: 100px;
+                height: 100px;
+                margin-top: 20px;
+            }
             /* Hide the "Drag and drop file" text */
             div[data-testid="stCameraInput"] small {
                 display: none;
@@ -74,9 +95,11 @@ def main():
         unsafe_allow_html=True
     )
 
-    st.markdown("<h1>ಚಿತ್ರವಾಚಕ</h1>", unsafe_allow_html=True)
-
-    # --- State Management and Audio Announcements ---
+    # --- State Management ---
+    if 'view' not in st.session_state:
+        st.session_state.view = 'home'  # Can be 'home' or 'camera'
+    if 'captured_image' not in st.session_state:
+        st.session_state.captured_image = None
 
     # 1. Welcome message on first load
     if 'welcome_played' not in st.session_state:
@@ -88,71 +111,88 @@ def main():
             st.warning(f"Could not play welcome message: {e}")
         st.session_state.welcome_played = True
 
-    # --- Main UI: The Camera Button ---
-    
-    # The camera input is the main interaction point.
-    captured_image = st.camera_input(
-        "ಕ್ಯಾಮೆರಾ ಬಟನ್ (Camera Button)", 
-        key="camera_input"
-    )
+    # --- UI ROUTING ---
 
-    # --- Processing Logic ---
+    if st.session_state.view == 'camera':
+        # --- CAMERA VIEW ---
+        st.markdown("<h4>ಚಿತ್ರವನ್ನು ಸೆರೆಹಿಡಿಯಿರಿ (Capture the image)</h4>", unsafe_allow_html=True)
+        
+        captured_image = st.camera_input(
+            "ಕ್ಯಾಮೆರಾ (Camera)", 
+            key="camera_main_view",
+            label_visibility="collapsed"
+        )
+        
+        if captured_image:
+            st.session_state.captured_image = captured_image
+            st.session_state.view = 'home'  # Switch back to home view for processing
+            st.rerun()
 
-    # Process the image only if a new one is captured
-    if captured_image is not None and captured_image != st.session_state.get('last_image_processed'):
-        st.session_state.last_image_processed = captured_image
+    elif st.session_state.view == 'home':
+        # --- HOME / RESULTS VIEW ---
+        st.markdown("<h1>ಚಿತ್ರವಾಚಕ</h1>", unsafe_allow_html=True)
 
-        # 2. Announce image capture and processing
-        processing_text = "ಚಿತ್ರವನ್ನು ಸೆರೆಹಿಡಿಯಲಾಗಿದೆ, ಈಗ ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ."
-        try:
-            audio_bytes = text_to_speech(processing_text, lang='kn')
-            autoplay_audio(audio_bytes, hidden=True)
-        except Exception as e:
-            st.warning(f"Could not play processing message: {e}")
+        # Check if an image was just captured
+        if st.session_state.captured_image is not None:
+            image_to_process = st.session_state.captured_image
+            st.session_state.captured_image = None # Clear the state to avoid reprocessing
 
-        with st.spinner("🔄 ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ... (Processing...)"):
+            # Announce processing
+            processing_text = "ಚಿತ್ರವನ್ನು ಸೆರೆಹಿಡಿಯಲಾಗಿದೆ, ಈಗ ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ."
             try:
-                image = Image.open(captured_image)
-                if image.mode != 'RGB':
-                    image = image.convert('RGB')
-                image_np = np.array(image)
-
-                # Extract text
-                extracted_text = extract_text(image_np)
-
-                if not extracted_text or not extracted_text.strip():
-                    # 3a. Announce if no text is found
-                    no_text_message = "ಕ್ಷಮಿಸಿ, ಚಿತ್ರದಲ್ಲಿ ಯಾವುದೇ ಪಠ್ಯ ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
-                    st.warning("⚠️ " + no_text_message)
-                    audio_bytes = text_to_speech(no_text_message, lang='kn')
-                    autoplay_audio(audio_bytes, hidden=True)
-                else:
-                    # 3b. Announce and read the extracted text
-                    st.success("✅ ಪಠ್ಯವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಓದಲಾಗಿದೆ! (Text read successfully!)")
-                    
-                    # Combine announcement and result for seamless playback
-                    result_announcement = f"ಪಠ್ಯವನ್ನು ಗುರುತಿಸಲಾಗಿದೆ. {extracted_text}"
-                    audio_bytes = text_to_speech(result_announcement, lang='kn')
-                    
-                    # Display the player with controls and autoplay
-                    st.markdown("### 🔊 ಫಲಿತಾಂಶವನ್ನು ಆಲಿಸಿ (Listen to the Result)")
-                    autoplay_audio(audio_bytes, hidden=False)
-
-                    # Provide a download button for the audio
-                    st.download_button(
-                        label="📥 ಆಡಿಯೋ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (Download Audio)",
-                        data=audio_bytes,
-                        file_name="kannada_speech.mp3",
-                        mime="audio/mpeg"
-                    )
-                    # For sighted users, also display the text
-                    st.info(f"**ಗುರುತಿಸಲಾದ ಪಠ್ಯ (Recognized Text):**\n\n{extracted_text}")
-
-            except Exception as e:
-                error_message = f"ಒಂದು ದೋಷ ಸಂಭವಿಸಿದೆ: {str(e)}"
-                st.error(error_message)
-                audio_bytes = text_to_speech("ಕ್ಷಮಿಸಿ, ಪ್ರಕ್ರಿಯೆಗೊಳಿಸುವಾಗ ದೋಷ ಕಂಡುಬಂದಿದೆ.", lang='kn')
+                audio_bytes = text_to_speech(processing_text, lang='kn')
                 autoplay_audio(audio_bytes, hidden=True)
+            except Exception as e:
+                st.warning(f"Could not play processing message: {e}")
+
+            with st.spinner("🔄 ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ... (Processing...)"):
+                try:
+                    image = Image.open(image_to_process)
+                    if image.mode != 'RGB':
+                        image = image.convert('RGB')
+                    image_np = np.array(image)
+
+                    # Extract text
+                    extracted_text = extract_text(image_np)
+
+                    if not extracted_text or not extracted_text.strip():
+                        no_text_message = "ಕ್ಷಮಿಸಿ, ಚಿತ್ರದಲ್ಲಿ ಯಾವುದೇ ಪಠ್ಯ ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+                        st.warning("⚠️ " + no_text_message)
+                        audio_bytes = text_to_speech(no_text_message, lang='kn')
+                        autoplay_audio(audio_bytes, hidden=True)
+                    else:
+                        st.success("✅ ಪಠ್ಯವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಓದಲಾಗಿದೆ! (Text read successfully!)")
+                        result_announcement = f"ಪಠ್ಯವನ್ನು ಗುರುತಿಸಲಾಗಿದೆ. {extracted_text}"
+                        audio_bytes = text_to_speech(result_announcement, lang='kn')
+                        
+                        st.markdown("### 🔊 ಫಲಿತಾಂಶವನ್ನು ಆಲಿಸಿ (Listen to the Result)")
+                        autoplay_audio(audio_bytes, hidden=False)
+
+                        st.download_button(
+                            label="📥 ಆಡಿಯೋ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (Download Audio)",
+                            data=audio_bytes,
+                            file_name="kannada_speech.mp3",
+                            mime="audio/mpeg"
+                        )
+                        st.info(f"**ಗುರುತಿಸಲಾದ ಪಠ್ಯ (Recognized Text):**\n\n{extracted_text}")
+
+                except Exception as e:
+                    error_message = f"ಒಂದು ದೋಷ ಸಂಭವಿಸಿದೆ: {str(e)}"
+                    st.error(error_message)
+                    audio_bytes = text_to_speech("ಕ್ಷಮಿಸಿ, ಪ್ರಕ್ರಿಯೆಗೊಳಿಸುವಾಗ ದೋಷ ಕಂಡುಬಂದಿದೆ.", lang='kn')
+                    autoplay_audio(audio_bytes, hidden=True)
+
+        # Show the button to open the camera
+        if st.button("ಕ್ಯಾಮೆರಾ ತೆರೆಯಿರಿ (Open Camera)", key="open_camera_btn"):
+            camera_open_text = "ಕ್ಯಾಮೆರಾ ತೆರೆಯಲಾಗುತ್ತಿದೆ. ಚಿತ್ರವನ್ನು ಸೆರೆಹಿಡಿಯಲು ಸಿದ್ಧರಾಗಿ."
+            try:
+                audio_bytes = text_to_speech(camera_open_text, lang='kn')
+                autoplay_audio(audio_bytes, hidden=True)
+            except Exception as e:
+                st.warning(f"Could not play camera open message: {e}")
+            
+            st.session_state.view = 'camera'
+            st.rerun()
 
 if __name__ == "__main__":
     # This is a workaround for a Streamlit issue where it might re-run the script
